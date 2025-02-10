@@ -21,18 +21,19 @@ class ApiService {
     'pithumbsize': '400',
     'inprop': 'url',
     'grnnamespace': '0',
-    'grnlimit': '20'
+    'grnlimit': '20',
+    'origin': "*",
   };
 
   Future<Map<String, dynamic>> getRequest(String endpoint) async {
-    final url = Uri.http(baseUrl, endpoint, queryParameter);
+    final url = Uri.https(baseUrl, endpoint, queryParameter);
     final response = await http.get(url);
     return jsonDecode(response.body);
   }
 
   Future<List<WikiArticle>> getArticles() async {
-    final response = await getRequest('/api.php');
-    final List<dynamic> articles = response['query']['search'];
+    final response = await getRequest('/w/api.php');
+    final List<dynamic> articles = response['query']['pages'];
     return articles.map((json) => WikiArticle.fromJson(json)).toList();
   }
 }

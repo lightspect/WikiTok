@@ -57,9 +57,9 @@ class _FeedScreenState extends State<FeedScreen> {
             allowImplicitScrolling: true,
             scrollDirection: Axis.vertical,
             controller: _pageController,
-            onPageChanged: (index) {
+            onPageChanged: (index) async {
               if (index == posts.length - 5) {
-                getArticles();
+                await getArticles();
               }
             },
             itemBuilder: (context, index) {
@@ -84,18 +84,13 @@ class _FeedScreenState extends State<FeedScreen> {
                 Container(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // _buildSideBarItem(
-                      //   Icons.favorite,
-                      //   posts[_currentPage % posts.length].likes,
-                      // ),
-                      // const SizedBox(height: 20),
-                      // _buildSideBarItem(
-                      //   Icons.comment,
-                      //   posts[_currentPage % posts.length].comments,
-                      // ),
-                      // const SizedBox(height: 20),
+                      _buildSideBarItem(
+                        Icons.favorite,
+                        "Favorite",
+                      ),
+                      const SizedBox(height: 20),
                       _buildSideBarItem(Icons.share, 'Share'),
                     ],
                   ),
@@ -119,10 +114,24 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> getArticles() async {
-    ApiService apiService = ApiService('https://en.wikipedia.org/w');
+    ApiService apiService = ApiService('en.wikipedia.org');
     List<WikiArticle> getPosts = await apiService.getArticles();
-    posts.addAll(getPosts.where((post) => post.thumbnail != null).toList());
+    //TODO: Add buffer articles
+    posts.addAll(getPosts
+        .where(
+            (post) => post.thumbnail != null && post.thumbnail?.source != null)
+        .toList());
     setState(() {});
+    _preloadImages();
+  }
+
+  void _preloadImages() {
+    for (int i = 0; i < posts.length; i++) {
+      precacheImage(
+          NetworkImage(
+              posts[i].thumbnail?.source ?? "https://placehold.co/600x400.png"),
+          context);
+    }
   }
 }
 
@@ -157,14 +166,25 @@ class ImagePost extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Image placeholder with different colors for each post
-          Image.network(
-              postData.thumbnail?.source ?? "https://placehold.co/600x400.png"),
+          // Image of each article
+          Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+              fit: BoxFit.fitHeight,
+              alignment: FractionalOffset.topCenter,
+              image: NetworkImage(postData.thumbnail?.source ??
+                  "https://placehold.co/600x400.png"),
+            )),
+          ),
+          // Transparency overlay
+          Container(
+            color: Colors.black.withValues(alpha: 0.5),
+          ),
           // Post information overlay
           Positioned(
-            bottom: 80,
+            bottom: 8,
             left: 8,
-            right: 8,
+            right: 80,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
