@@ -3,6 +3,8 @@ class WikiArticle {
   int? ns;
   String? title;
   String? extract;
+  Thumbnail? thumbnail;
+  String? pageimage;
   String? contentmodel;
   String? pagelanguage;
   String? pagelanguagehtmlcode;
@@ -19,6 +21,8 @@ class WikiArticle {
       ns,
       title,
       extract,
+      thumbnail,
+      pageimage,
       contentmodel,
       pagelanguage,
       pagelanguagehtmlcode,
@@ -35,6 +39,10 @@ class WikiArticle {
     ns = json['ns'];
     title = json['title'];
     extract = json['extract'];
+    thumbnail = json['thumbnail'] != null
+        ? Thumbnail.fromJson(json['thumbnail'])
+        : null;
+    pageimage = json['pageimage'];
     contentmodel = json['contentmodel'];
     pagelanguage = json['pagelanguage'];
     pagelanguagehtmlcode = json['pagelanguagehtmlcode'];
@@ -53,6 +61,10 @@ class WikiArticle {
     data['ns'] = ns;
     data['title'] = title;
     data['extract'] = extract;
+    if (thumbnail != null) {
+      data['thumbnail'] = thumbnail!.toJson();
+    }
+    data['pageimage'] = pageimage;
     data['contentmodel'] = contentmodel;
     data['pagelanguage'] = pagelanguage;
     data['pagelanguagehtmlcode'] = pagelanguagehtmlcode;
@@ -63,6 +75,28 @@ class WikiArticle {
     data['fullurl'] = fullurl;
     data['editurl'] = editurl;
     data['canonicalurl'] = canonicalurl;
+    return data;
+  }
+}
+
+class Thumbnail {
+  String? source;
+  int? width;
+  int? height;
+
+  Thumbnail({source, width, height});
+
+  Thumbnail.fromJson(Map<String, dynamic> json) {
+    source = json['source'];
+    width = json['width'];
+    height = json['height'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    data['source'] = source;
+    data['width'] = width;
+    data['height'] = height;
     return data;
   }
 }

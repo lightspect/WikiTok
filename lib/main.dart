@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:wikitok/api.dart';
+import 'package:wikitok/article.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,29 +31,15 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
 
   // Sample image data - replace with your actual image data
-  final List<PostData> posts = [
-    PostData(
-      username: '@nature_lover',
-      description: 'Beautiful sunset at the beach 🌅 #nature #sunset',
-      likes: '1.2K',
-      comments: '234',
-    ),
-    PostData(
-      username: '@traveler',
-      description: 'Exploring the mountains ⛰️ #adventure #travel',
-      likes: '3.4K',
-      comments: '456',
-    ),
-    PostData(
-      username: '@foodie',
-      description: 'Delicious homemade pasta 🍝 #food #cooking',
-      likes: '2.8K',
-      comments: '345',
-    ),
-  ];
+  List<WikiArticle> posts = [];
+
+  @override
+  void initState() {
+    getArticles();
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -66,18 +54,25 @@ class _FeedScreenState extends State<FeedScreen> {
         alignment: Alignment.bottomRight,
         children: [
           PageView.builder(
+            allowImplicitScrolling: true,
             scrollDirection: Axis.vertical,
             controller: _pageController,
             onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
+              if (index == posts.length - 5) {
+                getArticles();
+              }
             },
             itemBuilder: (context, index) {
-              return ImagePost(
-                postData: posts[index % posts.length],
-                index: index,
-              );
+              if (posts.isEmpty) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else {
+                return ImagePost(
+                  postData: posts[index],
+                  index: index,
+                );
+              }
             },
           ),
           // Overlay UI elements
@@ -91,16 +86,16 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _buildSideBarItem(
-                        Icons.favorite,
-                        posts[_currentPage % posts.length].likes,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildSideBarItem(
-                        Icons.comment,
-                        posts[_currentPage % posts.length].comments,
-                      ),
-                      const SizedBox(height: 20),
+                      // _buildSideBarItem(
+                      //   Icons.favorite,
+                      //   posts[_currentPage % posts.length].likes,
+                      // ),
+                      // const SizedBox(height: 20),
+                      // _buildSideBarItem(
+                      //   Icons.comment,
+                      //   posts[_currentPage % posts.length].comments,
+                      // ),
+                      // const SizedBox(height: 20),
                       _buildSideBarItem(Icons.share, 'Share'),
                     ],
                   ),
@@ -122,6 +117,13 @@ class _FeedScreenState extends State<FeedScreen> {
       ],
     );
   }
+
+  Future<void> getArticles() async {
+    ApiService apiService = ApiService('https://en.wikipedia.org/w');
+    List<WikiArticle> getPosts = await apiService.getArticles();
+    posts.addAll(getPosts.where((post) => post.thumbnail != null).toList());
+    setState(() {});
+  }
 }
 
 class PostData {
@@ -139,7 +141,7 @@ class PostData {
 }
 
 class ImagePost extends StatelessWidget {
-  final PostData postData;
+  final WikiArticle postData;
   final int index;
 
   const ImagePost({
@@ -156,35 +158,8 @@ class ImagePost extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Image placeholder with different colors for each post
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  HSLColor.fromAHSL(
-                    1.0,
-                    (index * 45.0) % 360.0,
-                    0.8,
-                    0.5,
-                  ).toColor(),
-                  HSLColor.fromAHSL(
-                    1.0,
-                    ((index * 45.0) + 45.0) % 360.0,
-                    0.8,
-                    0.5,
-                  ).toColor(),
-                ],
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.image,
-                size: 100,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
+          Image.network(
+              postData.thumbnail?.source ?? "https://placehold.co/600x400.png"),
           // Post information overlay
           Positioned(
             bottom: 80,
@@ -194,7 +169,7 @@ class ImagePost extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  postData.username,
+                  postData.title ?? "Title",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -202,7 +177,7 @@ class ImagePost extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  postData.description,
+                  postData.extract ?? "Description",
                   style: const TextStyle(fontSize: 14),
                 ),
               ],
