@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:wikitok/api.dart';
 import 'package:wikitok/article.dart';
 
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Image Feed',
+      title: 'WikiTok',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
@@ -114,20 +115,6 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
-class PostData {
-  final String username;
-  final String description;
-  final String likes;
-  final String comments;
-
-  PostData({
-    required this.username,
-    required this.description,
-    required this.likes,
-    required this.comments,
-  });
-}
-
 class ImagePost extends StatelessWidget {
   final WikiArticle postData;
   final int index;
@@ -192,12 +179,13 @@ class ImagePost extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _buildSideBarItem(
-                        Icons.favorite,
-                        "Favorite",
-                      ),
+                      _buildSideBarItem(Icons.favorite, "Favorite", () {}),
                       const SizedBox(height: 20),
-                      _buildSideBarItem(Icons.share, 'Share'),
+                      _buildSideBarItem(
+                          Icons.share,
+                          'Share',
+                          () async => await Share.share(
+                              postData.fullurl ?? "https://en.wikipedia.org")),
                     ],
                   ),
                 ),
@@ -221,13 +209,18 @@ class ImagePost extends StatelessWidget {
     );
   }
 
-  Widget _buildSideBarItem(IconData icon, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 32),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
+  Widget _buildSideBarItem(IconData icon, String label, Function onTap) {
+    return GestureDetector(
+      onTap: () {
+        onTap();
+      },
+      child: Column(
+        children: [
+          Icon(icon, size: 32),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
     );
   }
 }
