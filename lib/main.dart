@@ -34,6 +34,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   // Sample image data - replace with your actual image data
   List<WikiArticle> posts = [];
+  List<WikiArticle> bufferPosts = [];
 
   @override
   void initState() {
@@ -59,7 +60,7 @@ class _FeedScreenState extends State<FeedScreen> {
             controller: _pageController,
             onPageChanged: (index) async {
               if (index == posts.length - 5) {
-                await getArticles();
+                await getMoreArticles();
               }
             },
             itemBuilder: (context, index) {
@@ -76,53 +77,31 @@ class _FeedScreenState extends State<FeedScreen> {
             },
           ),
           // Overlay UI elements
-          SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _buildSideBarItem(
-                        Icons.favorite,
-                        "Favorite",
-                      ),
-                      const SizedBox(height: 20),
-                      _buildSideBarItem(Icons.share, 'Share'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildSideBarItem(IconData icon, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 32),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-
-  Future<void> getArticles() async {
+  Future<void> getArticles({bool forBuffer = false}) async {
     ApiService apiService = ApiService('en.wikipedia.org');
     List<WikiArticle> getPosts = await apiService.getArticles();
-    //TODO: Add buffer articles
-    posts.addAll(getPosts
+    final filteredPosts = getPosts
         .where(
             (post) => post.thumbnail != null && post.thumbnail?.source != null)
-        .toList());
+        .toList();
+    if (forBuffer) {
+      bufferPosts = filteredPosts;
+    } else {
+      posts.addAll(filteredPosts);
+      getArticles(forBuffer: true);
+    }
     setState(() {});
     _preloadImages();
+  }
+
+  Future<void> getMoreArticles() async {
+    posts.addAll(bufferPosts);
+    getArticles(forBuffer: true);
   }
 
   void _preloadImages() {
@@ -184,21 +163,43 @@ class ImagePost extends StatelessWidget {
           Positioned(
             bottom: 8,
             left: 8,
-            right: 80,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            right: 8,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  postData.title ?? "Title",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        postData.title ?? "Title",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        postData.extract ?? "Description",
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  postData.extract ?? "Description",
-                  style: const TextStyle(fontSize: 14),
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildSideBarItem(
+                        Icons.favorite,
+                        "Favorite",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildSideBarItem(Icons.share, 'Share'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -217,6 +218,16 @@ class ImagePost extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSideBarItem(IconData icon, String label) {
+    return Column(
+      children: [
+        Icon(icon, size: 32),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
     );
   }
 }
