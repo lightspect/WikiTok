@@ -52,6 +52,24 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('WikiTok'),
+        backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            onPressed: () {
+              // Add search functionality here
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Search functionality coming soon!'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Stack(
         alignment: Alignment.bottomRight,
         children: [
@@ -182,10 +200,12 @@ class ImagePost extends StatelessWidget {
                       _buildSideBarItem(Icons.favorite, "Favorite", () {}),
                       const SizedBox(height: 20),
                       _buildSideBarItem(
-                          Icons.share,
-                          'Share',
-                          () async => await Share.share(
-                              postData.fullurl ?? "https://en.wikipedia.org")),
+                        Icons.share,
+                        'Share',
+                        () async => await Share.share(
+                            postData.fullurl ?? "https://en.wikipedia.org",
+                            subject: postData.title),
+                      ),
                     ],
                   ),
                 ),
