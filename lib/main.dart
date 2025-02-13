@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wikitok/api.dart';
 import 'package:wikitok/article.dart';
 import 'package:wikitok/share_preferences.dart';
@@ -86,18 +87,21 @@ class _FeedScreenState extends State<FeedScreen> {
           IconButton(
             icon: const Icon(Icons.favorite),
             onPressed: () {
-              showDialog(
-                context: context,
+              Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => LikedArticleDialog(
-                    likedArticles: likedArticles,
-                    onRemove: (index) {
-                      setState(() {
-                        posts[index].liked = false;
-                        likedArticles.removeAt(index);
-                        saveLikedArticles();
-                      });
-                    }),
-              );
+                  likedArticles: likedArticles,
+                  onRemove: (index) {
+                    final removedArticle = likedArticles.removeAt(index);
+                    setState(() {
+                      posts
+                          .firstWhere((article) =>
+                              article.pageid == removedArticle.pageid)
+                          .liked = false;
+                    });
+                    saveLikedArticles();
+                  },
+                ),
+              ));
             },
           ),
         ],
@@ -226,11 +230,14 @@ class ImagePost extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        postData.title ?? "Title",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: _launchUrl,
+                        child: Text(
+                          postData.title ?? "Title",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -246,6 +253,12 @@ class ImagePost extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      _buildSideBarItem(
+                        Icons.read_more,
+                        "Browse",
+                        _launchUrl,
+                      ),
+                      const SizedBox(height: 20),
                       _buildSideBarItem(
                         postData.liked ? Icons.favorite : Icons.favorite_border,
                         "Favorite",
@@ -269,10 +282,12 @@ class ImagePost extends StatelessWidget {
           // Double tap area for likes
           GestureDetector(
             onDoubleTap: () {
-              // Add like functionality here
+              onFavorite();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Double tapped! Add like functionality here.'),
+                SnackBar(
+                  content: Text(postData.liked
+                      ? 'Added to Favorites'
+                      : 'Removed from Favorites'),
                   duration: Duration(seconds: 1),
                 ),
               );
@@ -297,6 +312,13 @@ class ImagePost extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse(postData.fullurl ?? "https://en.wikipedia.org");
+    if (!await launchUrl(url)) {
+      throw Exception('Could not launch $url');
+    }
   }
 }
 
@@ -324,14 +346,6 @@ class _LikedArticleDialogState extends State<LikedArticleDialog> {
       appBar: AppBar(
         title: Text("Liked Articles"),
         backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.download), // Export button
-            onPressed: () {
-              // Handle export functionality
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -368,29 +382,33 @@ class _LikedArticleDialogState extends State<LikedArticleDialog> {
                       if (!article.title!.toLowerCase().contains(searchQuery)) {
                         return SizedBox.shrink();
                       }
-                      return ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            article.thumbnail?.source ??
-                                "https://placehold.co/300x200.png",
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
+                      return GestureDetector(
+                        onTap: () => launchUrl(Uri.parse(
+                            article.fullurl ?? "https://en.wikipedia.org")),
+                        child: ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              article.thumbnail?.source ??
+                                  "https://placehold.co/300x200.png",
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                        title: Text(article.title ?? "Title",
-                            style: TextStyle(color: Colors.white)),
-                        subtitle: Text(article.extract ?? "Description",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.white70)),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            widget.onRemove(index);
-                            setState(() {});
-                          },
+                          title: Text(article.title ?? "Title",
+                              style: TextStyle(color: Colors.white)),
+                          subtitle: Text(article.extract ?? "Description",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.white70)),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              widget.onRemove(index);
+                              setState(() {});
+                            },
+                          ),
                         ),
                       );
                     },
