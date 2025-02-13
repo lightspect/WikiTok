@@ -104,6 +104,20 @@ class _FeedScreenState extends State<FeedScreen> {
               ));
             },
           ),
+          IconButton(
+              onPressed: () {
+                showAboutDialog(
+                  context: context,
+                  applicationName: "WikiTok",
+                  applicationVersion: "1.0.0",
+                  applicationIcon: Icon(Icons.info_outline),
+                  children: [
+                    Text(
+                        "WikiTok is a simple Wikipedia reader app that fetches articles from Wikipedia's API and displays them in a TikTok-like feed."),
+                  ],
+                );
+              },
+              icon: Icon(Icons.info_outline)),
         ],
       ),
       body: SafeArea(
