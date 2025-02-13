@@ -150,8 +150,8 @@ class _FeedScreenState extends State<FeedScreen> {
                         if (posts[index].liked) {
                           likedArticles.add(posts[index]);
                         } else {
-                          likedArticles.removeWhere(
-                              (article) => article.title == posts[index].title);
+                          likedArticles.removeWhere((article) =>
+                              article.pageid == posts[index].pageid);
                         }
                         saveLikedArticles();
                       });
