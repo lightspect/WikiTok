@@ -11,7 +11,7 @@ class SharedPreferencesManager {
 
   SharedPreferencesManager._internal();
 
-  Future<void> init() async {
+  void init() {
     _preferences = SharedPreferencesAsync();
   }
 
@@ -29,6 +29,14 @@ class SharedPreferencesManager {
 
   Future<int?> getInt(String key) async {
     return await _preferences?.getInt(key);
+  }
+
+  Future<void> setStringList(String key, List<String> value) async {
+    await _preferences?.setStringList(key, value);
+  }
+
+  Future<List<String>?> getStringList(String key) async {
+    return await _preferences?.getStringList(key);
   }
 
   Future<void> remove(String key) async {

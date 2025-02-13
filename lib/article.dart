@@ -15,6 +15,7 @@ class WikiArticle {
   String? fullurl;
   String? editurl;
   String? canonicalurl;
+  bool liked = false;
 
   WikiArticle(
       {pageid,
