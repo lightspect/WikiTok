@@ -105,19 +105,20 @@ class _FeedScreenState extends State<FeedScreen> {
             },
           ),
           IconButton(
-              onPressed: () {
-                showAboutDialog(
-                  context: context,
-                  applicationName: "WikiTok",
-                  applicationVersion: "1.0.0",
-                  applicationIcon: Icon(Icons.info_outline),
-                  children: [
-                    Text(
-                        "WikiTok is a simple Wikipedia reader app that fetches articles from Wikipedia's API and displays them in a TikTok-like feed."),
-                  ],
-                );
-              },
-              icon: Icon(Icons.info_outline)),
+            icon: Icon(Icons.info_outline),
+            onPressed: () {
+              showAboutDialog(
+                context: context,
+                applicationName: "WikiTok",
+                applicationVersion: "1.0.0",
+                applicationIcon: Icon(Icons.info_outline),
+                children: [
+                  Text(
+                      "WikiTok is a simple Wikipedia reader app that fetches articles from Wikipedia's API and displays them in a TikTok-like feed."),
+                ],
+              );
+            },
+          ),
         ],
       ),
       body: SafeArea(
@@ -229,7 +230,7 @@ class ImagePost extends StatelessWidget {
           ),
           // Transparency overlay
           Container(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.3),
           ),
           // Post information overlay
           Positioned(
@@ -249,7 +250,7 @@ class ImagePost extends StatelessWidget {
                         child: Text(
                           postData.title ?? "Title",
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -257,7 +258,9 @@ class ImagePost extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         postData.extract ?? "Description",
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 16),
+                        maxLines: 10,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
