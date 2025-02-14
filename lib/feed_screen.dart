@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wikitok/api.dart';
 import 'package:wikitok/article.dart';
 import 'package:wikitok/image_post.dart';
+import 'package:wikitok/language_dialog.dart';
 import 'package:wikitok/liked_article_screen.dart';
 import 'package:wikitok/share_preferences.dart';
 
@@ -17,10 +18,10 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   final PageController _pageController = PageController();
 
-  // Sample image data - replace with your actual image data
   List<WikiArticle> posts = [];
   List<WikiArticle> bufferPosts = [];
   List<WikiArticle> likedArticles = [];
+  String selectedLanguage = "en";
   SharedPreferencesManager sharedPreferencesManager =
       SharedPreferencesManager();
 
@@ -28,8 +29,14 @@ class _FeedScreenState extends State<FeedScreen> {
   void initState() {
     getArticles();
     sharedPreferencesManager.init();
+    loadSelectedLanguage();
     loadLikedArticles();
     super.initState();
+  }
+
+  Future<void> loadSelectedLanguage() async {
+    selectedLanguage =
+        await sharedPreferencesManager.getString("selectedLanguage") ?? "en";
   }
 
   Future<void> loadLikedArticles() async {
@@ -40,6 +47,11 @@ class _FeedScreenState extends State<FeedScreen> {
           .map((e) => WikiArticle.fromJson(jsonDecode(e)))
           .toList();
     }
+  }
+
+  Future<void> saveSelectedLanguage() async {
+    await sharedPreferencesManager.setString(
+        "selectedLanguage", selectedLanguage);
   }
 
   Future<void> saveLikedArticles() async {
@@ -65,6 +77,25 @@ class _FeedScreenState extends State<FeedScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.language),
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (context) => LanguageDialog(
+                        selectedLanguage: selectedLanguage,
+                      )).then((value) async {
+                if (value != null && value != selectedLanguage) {
+                  selectedLanguage = value.toString();
+                  await saveSelectedLanguage();
+                  _pageController.jumpTo(0);
+                  posts.clear();
+                  setState(() {});
+                  await getArticles();
+                }
+              });
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.favorite),
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
@@ -74,9 +105,9 @@ class _FeedScreenState extends State<FeedScreen> {
                     final removedArticle = likedArticles.removeAt(index);
                     setState(() {
                       posts
-                          .firstWhere((article) =>
+                          .where((article) =>
                               article.pageid == removedArticle.pageid)
-                          .liked = false;
+                          .forEach((article) => article.liked = false);
                     });
                     saveLikedArticles();
                   },
@@ -142,7 +173,7 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> getArticles({bool forBuffer = false}) async {
-    ApiService apiService = ApiService('en.wikipedia.org');
+    ApiService apiService = ApiService('$selectedLanguage.wikipedia.org');
     List<WikiArticle> getPosts = await apiService.getArticles();
     final filteredPosts = getPosts
         .where(
